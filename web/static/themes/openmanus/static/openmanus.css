@@ -1,19 +1,18 @@
 :root {
-    --primary-color: #007bff;
-    --primary-hover: #0056b3;
-    --primary-color-light: #e6f2ff;
-    --success-color: #28a745;
-    --success-color-light: #e8f5e9;
-    --error-color: #dc3545;
-    --error-color-light: #ffe6e6;
-    --warning-color: #ff9800;
-    --warning-color-light: #fff8e6;
-    --info-color: #2196f3;
-    --info-color-light: #e3f2fd;
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --accent-color: #e74c3c;
+    --dark-color: #2c3e50;
+    --light-color: #ecf0f1;
     --text-color: #333;
     --text-light: #666;
     --bg-color: #f8f9fa;
     --border-color: #ddd;
+    --workspace-bg: #f5f5f5;
+    --workspace-header-bg: #e9e9e9;
+    --terminal-bg: #1e1e1e;
+    --terminal-text: #f8f8f8;
+    --code-editor-bg: #1e1e1e;
 }
 
 * {
@@ -32,25 +31,20 @@ body {
 
 .container {
     display: flex;
-    min-height: 100vh;
-    min-width: 0;
-    width: 98%;
-    margin: 0 auto;
-    padding: 10px;
-    gap: 10px;
+    min-height: calc(100vh - 70px);
+    width: min(1600px, 98%);
+    margin: 65px auto 0;
+    padding: 0;
+    gap: 20px;
     position: relative;
-    transition: all 0.3s ease;
-    margin-top: 60px;
-    /* Top header height + spacing */
-    min-height: calc(100vh - 60px);
 }
 
-.container.with-result {
-    /* Reserve space for result panel, use calc to calculate width, reduce gap */
-    width: calc(68% - 10px);
-    /* Increase main panel width, reduce right margin */
-    margin-right: auto;
-    margin-left: 0;
+.container.with-workspace {
+    width: min(1800px, 98%);
+    margin: 65px auto 0;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
 }
 
 .card {
@@ -61,15 +55,228 @@ body {
 }
 
 .history-panel {
-    width: 200px;
-    flex-shrink: 0;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 250px;
+    height: calc(100vh - 60px);
     background-color: white;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    height: calc(100vh - 80px);
-    /* Subtract header height and spacing */
-    overflow: auto;
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 99;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding: 15px 0;
+}
+
+.history-panel.show {
+    transform: translateX(0);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
+.history-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.history-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.history-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.history-action-btn:hover {
+    background-color: var(--light-color);
+    color: var(--dark-color);
+}
+
+/* Header styles */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 100;
+}
+
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.header a.logo,
+.header a.logo:visited {
+    text-decoration: none;
+    color: var(--dark-color);
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.header a.logo:hover,
+.header a.logo:active {
+    color: var(--primary-color);
+    transform: scale(1.02);
+}
+
+.history-toggle {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 20px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.history-toggle i {
+    font-size: 18px;
+}
+
+.history-count {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: var(--accent-color);
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.history-toggle:hover {
+    background-color: var(--light-color);
+    color: var(--dark-color);
+}
+
+/* Status indicators */
+.status-pending,
+.status-running,
+.status-completed,
+.status-failed,
+.status-error,
+.status-complete {
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    display: inline-block;
+}
+
+.status-pending {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+.status-running {
+    background-color: #e3f2fd;
+    color: #0288d1;
+}
+
+.status-completed,
+.status-complete {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-failed,
+.status-error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Task card list */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 15px;
+    overflow-y: auto;
+    height: calc(100% - 50px);
+}
+
+.task-card {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.task-card.active {
+    border-left: 3px solid var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.task-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: var(--dark-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.task-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-light);
 }
 
 .steps-panel {
@@ -86,196 +293,44 @@ body {
 
 .steps-container {
     flex: 1;
-    width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+    padding-right: 10px;
 }
 
 .main-panel {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     height: calc(100vh - 80px);
-    /* Subtract header height and spacing */
-    min-width: 400px;
-    position: relative;
-    transition: all 0.3s ease;
+}
+
+.workspace-panel {
+    width: 40%;
+    height: calc(100vh - 80px);
+    background-color: var(--workspace-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .task-container {
     flex: 1;
-    width: 100%;
-    max-width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    background-color: white;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: auto;
-    transition: width 0.3s ease;
-}
-
-.result-panel {
-    width: 31%;
-    /* Slightly reduce result panel width */
-    min-width: 380px;
-    /* Reduce minimum width */
-    height: calc(100vh - 80px);
-    /* Subtract header height and spacing */
-    position: fixed;
-    right: 10px;
-    /* Restore right position */
-    top: 70px;
-    /* Adjust to fully align with history panel */
-    background-color: rgba(22, 24, 36, 0.98);
-    border: 1px solid rgba(60, 80, 220, 0.2);
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3), 0 0 40px rgba(60, 80, 220, 0.15);
-    overflow: auto;
-    transition: transform 0.3s ease;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-}
-
-.result-panel.hidden {
-    transform: translateX(calc(100% + 10px));
-    /* Restore slide-out effect to the right */
-}
-
-.result-panel.minimized {
-    display: none !important;
-}
-
-.result-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(80, 80, 80, 0.3);
-    background: linear-gradient(90deg, rgba(20, 25, 30, 0.9), rgba(30, 35, 45, 0.9));
-    padding: 15px;
-    border-radius: 8px 8px 0 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.result-header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg,
-            transparent,
-            rgba(0, 180, 255, 0.4),
-            rgba(120, 0, 255, 0.6),
-            rgba(0, 180, 255, 0.4),
-            transparent);
-}
-
-.result-header h2 {
-    font-size: 18px;
-    font-weight: 500;
-    color: #fff;
-    margin: 0;
-    position: relative;
-    text-shadow: 0 0 10px rgba(0, 140, 255, 0.3);
-    display: flex;
-    align-items: center;
-}
-
-.result-header h2::before {
-    content: '';
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background-color: rgba(0, 180, 255, 0.8);
-    border-radius: 50%;
-    margin-right: 10px;
-    box-shadow: 0 0 8px rgba(0, 180, 255, 0.8);
-    animation: pulse-light 2s infinite;
-}
-
-.result-controls {
-    display: flex;
-    gap: 8px;
-}
-
-.minimize-result {
-    display: inline-flex;
-    width: 28px;
-    height: 28px;
-    justify-content: center;
-    align-items: center;
-    border-radius: 4px;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.2s;
-    position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.minimize-result:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(0, 140, 255, 0.4);
-}
-
-/* Replace arrow with fullscreen icon */
-.minimize-result::before,
-.minimize-result::after {
-    content: "";
-    position: absolute;
-    background-color: rgba(255, 255, 255, 0.8);
-    transition: all 0.2s;
-}
-
-/* Create fullscreen icon outline */
-.minimize-result::before {
-    width: 12px;
-    height: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    background: transparent;
-}
-
-/* Create fullscreen icon small square at bottom right */
-.minimize-result::after {
-    width: 5px;
-    height: 5px;
-    background-color: rgba(255, 255, 255, 0.8);
-    right: 7px;
-    bottom: 7px;
-}
-
-.result-container {
-    width: 100%;
-    flex: 1;
-    overflow: auto;
-    margin-top: 0;
-    padding: 5px;
-    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background-color: transparent;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.result-container p,
-.result-container div,
-.result-container pre,
-.result-container span {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-width: 100%;
-    margin-bottom: 5px;
-    line-height: 1.4;
+    gap: 10px;
 }
 
 /* Modified search result styles */
@@ -345,46 +400,46 @@ body {
     background-color: #e0e0e0;
 }
 
-.task-list {
-    margin-top: 10px;
-    max-height: calc(100% - 40px);
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
 .welcome-message {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: var(--text-light);
-    padding: 40px 20px;
+    padding: 40px;
     width: 100%;
     height: 100%;
-    min-height: 400px;
-    position: relative;
-    margin: auto 0;
+    min-height: 600px;
+}
+
+.welcome-logo {
+    width: 380px;
+    height: auto;
+    margin-bottom: 25px;
 }
 
 .welcome-message h1 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
+    font-size: 3.5rem;
+    margin-bottom: 30px;
     color: #333;
     font-weight: 600;
+}
+
+.animated-text {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.animated-subtext {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 25px;
 }
 
 .logo-animation {
     margin-bottom: 10px;
     animation: pulse 2s infinite ease-in-out;
-}
-
-.welcome-logo {
-    width: 320px;
-    height: auto;
-    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2));
-    transition: all 0.3s ease;
-    margin-bottom: 5px;
 }
 
 .welcome-logo:hover {
@@ -463,7 +518,7 @@ body {
     }
 }
 
-/* 高亮文本 - 亮色系蓝色渐变 */
+/* Highlighted Text - Light Blue Gradient */
 .highlight-text {
     background: linear-gradient(135deg, #0575E6 0%, #0096FF 35%, #00B4FF 65%, #00D2FF 100%);
     -webkit-background-clip: text;
@@ -505,28 +560,25 @@ body {
 
 /* Send button styles - blue border color scheme */
 .send-btn {
-    padding: 12px 30px;
-    background: linear-gradient(135deg, #0575E6, #0096FF);
+    background: linear-gradient(135deg, var(--primary-color), #2574a9);
     color: white;
     border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    font-size: 15px;
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-size: 16px;
     font-weight: 500;
-    letter-spacing: 0.5px;
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 15px rgba(5, 117, 230, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .send-btn:hover {
-    background: linear-gradient(135deg, #0468C8, #0086E8);
+    background: linear-gradient(135deg, #2574a9, var(--primary-color));
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(5, 117, 230, 0.3);
-}
-
-.send-btn:active {
-    transform: translateY(0px);
-    box-shadow: 0 2px 10px rgba(5, 117, 230, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .task-card {
@@ -568,7 +620,7 @@ body {
     margin-left: 5px;
     position: relative;
     color: rgba(255, 255, 255, 1);
-    /* 确保文字是纯白色 */
+    /* Ensure text is pure white */
     font-weight: 500;
 }
 
@@ -577,7 +629,7 @@ body {
     position: absolute;
     right: -12px;
     color: rgba(0, 140, 255, 0.9);
-    /* 蓝色光标 */
+    /* Blue Cursor */
     animation: blink 1s infinite;
 }
 
@@ -624,7 +676,7 @@ body {
 
 .step-item .log-body {
     display: none;
-    /* 默认隐藏详细内容 */
+    /* Hide detailed content by default */
     padding: 10px;
     background-color: white;
     color: #333;
@@ -641,7 +693,7 @@ body {
     max-width: 280px;
 }
 
-/* 增强时间戳显示 */
+/* Enhanced timestamp display */
 .log-prefix time {
     font-weight: 500;
     color: #0575E6;
@@ -667,7 +719,7 @@ body {
     min-width: 0;
 }
 
-/* 步骤图标 */
+/* Step icons */
 .log-prefix-icon {
     display: inline-flex;
     width: 24px;
@@ -710,7 +762,7 @@ body {
     color: #333;
 }
 
-/* 不同步骤类型的颜色 */
+/* Colors for different step types */
 .step-item.think .log-header {
     background-color: var(--info-color-light);
     border-left: 3px solid var(--info-color);
@@ -733,7 +785,7 @@ body {
 
 .step-item.expanded .log-body {
     display: block;
-    /* 展开时才显示详细内容 */
+    /* Show detailed content only when expanded */
 }
 
 .step-item pre {
@@ -1061,137 +1113,6 @@ body {
     box-shadow: 0 6px 15px rgba(0, 220, 130, 0.4);
 }
 
-/* 响应式设计 */
-@media screen and (max-width: 1200px) {
-    .title {
-        font-size: 6rem;
-    }
-
-    .hero-section {
-        padding: 2rem 1.5rem;
-        max-width: 800px;
-    }
-}
-
-@media screen and (max-width: 768px) {
-    .title {
-        font-size: 4.5rem;
-        letter-spacing: -1px;
-    }
-
-    .subtitle {
-        font-size: 1.5rem;
-        margin-bottom: 1.2rem;
-    }
-
-    .description {
-        font-size: 1rem;
-        margin-bottom: 2.5rem;
-        padding: 0 1rem;
-    }
-
-    .cta-button {
-        padding: 0.8rem 2.2rem;
-        font-size: 0.95rem;
-    }
-
-    .emoji {
-        font-size: 2rem;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .title {
-        font-size: 3.5rem;
-        margin-bottom: 0.8rem;
-    }
-
-    .subtitle {
-        font-size: 1.3rem;
-        margin-bottom: 1rem;
-    }
-
-    .description {
-        font-size: 0.9rem;
-        line-height: 1.6;
-        margin-bottom: 2rem;
-    }
-
-    .cta-button {
-        padding: 0.7rem 2rem;
-        font-size: 0.9rem;
-        border-radius: 20px;
-    }
-
-    .emoji {
-        font-size: 1.5rem;
-    }
-
-    .hero-section {
-        padding: 1.5rem 1rem;
-    }
-}
-
-@media screen and (max-width: 360px) {
-    .title {
-        font-size: 3rem;
-    }
-
-    .subtitle {
-        font-size: 1.1rem;
-    }
-
-    .description {
-        font-size: 0.85rem;
-    }
-
-    .cta-button {
-        padding: 0.6rem 1.8rem;
-        font-size: 0.85rem;
-    }
-}
-
-/* 适配高度 */
-@media screen and (max-height: 700px) {
-    .hero-section {
-        padding: 1rem;
-    }
-
-    .description {
-        margin-bottom: 2rem;
-    }
-}
-
-/* 适配横屏模式 */
-@media screen and (max-height: 500px) and (orientation: landscape) {
-    .hero-section {
-        padding: 1rem;
-    }
-
-    .title {
-        font-size: 3.5rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .subtitle {
-        font-size: 1.2rem;
-        margin-bottom: 0.8rem;
-    }
-
-    .description {
-        font-size: 0.9rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .cta-button {
-        padding: 0.8rem 2.5rem;
-    }
-
-    .emoji {
-        display: none;
-    }
-}
-
 /* Homepage styles */
 .home-container {
     min-height: 100vh;
@@ -1348,7 +1269,7 @@ body {
 
 .step-highlight {
     background-color: #ffefef;
-    /* 红色背景 */
+    /* Red Background */
     border: 1px solid #ffcdd2;
     border-left: 3px solid #f44336;
     padding: 8px 12px;
@@ -1360,7 +1281,7 @@ body {
 
 .content-highlight {
     background-color: #e3f2fd;
-    /* 蓝色背景 */
+    /* Blue Background */
     border: 1px solid #bbdefb;
     border-left: 3px solid #2196f3;
     padding: 10px;
@@ -1413,7 +1334,7 @@ body {
     gap: 10px;
 }
 
-/* 移除链接下划线的高优先级规则 */
+/* High priority rule to remove link underlines */
 .header a.logo,
 .header-left a.logo,
 .header a,
@@ -1438,7 +1359,7 @@ a.logo:active {
     border-bottom: none !important;
 }
 
-/* 优化OpenManus文字渐变效果 */
+/* Optimize OpenManus text gradient effect */
 .header .logo-text,
 .header-left .logo-text,
 span.logo-text,
@@ -1610,18 +1531,18 @@ span.logo-text:hover,
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.3);
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
     z-index: 98;
-    opacity: 0;
-    pointer-events: none;
+    display: none;
     transition: opacity 0.3s ease;
+    opacity: 0;
 }
 
 .overlay.show {
+    display: block;
     opacity: 1;
-    pointer-events: all;
 }
 
 /* Container adjustment, reserve space for history panel */
@@ -1668,28 +1589,311 @@ button {
 }
 
 .input-container {
-    width: 100%;
-    background-color: white;
-    border-radius: 12px;
-    padding: 15px 20px;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
     display: flex;
-    gap: 15px;
-    margin-top: auto;
+    gap: 10px;
+    z-index: 10;
 }
 
 #prompt-input {
     flex: 1;
-    padding: 14px 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 24px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
 }
 
 #prompt-input:focus {
-    border-color: #0096FF;
-    box-shadow: 0 2px 12px rgba(0, 150, 255, 0.15);
-    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* 响应式设计 - 全局媒体查询 */
+@media (max-width: 1200px) {
+    .container {
+        width: 100%;
+        margin-top: 60px;
+        padding: 0 10px;
+    }
+
+    .container.with-workspace {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .main-panel,
+    .workspace-panel {
+        width: 100%;
+        min-height: 500px;
+        height: auto;
+    }
+
+    .workspace-panel {
+        margin-top: 20px;
+    }
+
+    .welcome-message h1 {
+        font-size: 2.5rem;
+    }
+
+    .welcome-logo {
+        width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 0 10px;
+    }
+
+    .header-right {
+        gap: 10px;
+    }
+
+    .header .logo-text {
+        font-size: 20px;
+    }
+
+    .steps-panel {
+        display: none;
+        /* 在小屏幕上隐藏 */
+    }
+
+    .task-container {
+        padding: 15px 10px;
+    }
+
+    .welcome-message {
+        padding: 20px;
+        min-height: 400px;
+    }
+
+    .welcome-message h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+
+    .welcome-logo {
+        width: 220px;
+    }
+
+    .animated-text {
+        font-size: 1.4rem;
+    }
+
+    .animated-subtext {
+        font-size: 0.8rem;
+    }
+
+    .login-btn {
+        padding: 8px 18px;
+        font-size: 13px;
+    }
+
+    .step-item .log-header {
+        flex-wrap: wrap;
+    }
+
+    .log-prefix {
+        max-width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .content-preview {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .input-container {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    #prompt-input {
+        width: 100%;
+    }
+
+    .send-btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header .logo-text {
+        font-size: 18px;
+    }
+
+    .welcome-message h1 {
+        font-size: 1.8rem;
+    }
+
+    .welcome-logo {
+        width: 180px;
+    }
+
+    .history-panel {
+        width: 100%;
+    }
+
+    .task-browser-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .task-browser-title {
+        width: 100%;
+    }
+
+    .task-browser-url {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .task-browser-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* 调整高度响应式 */
+@media (max-height: 700px) {
+    .container {
+        margin-top: 50px;
+    }
+
+    .workspace-panel,
+    .main-panel {
+        height: calc(100vh - 60px);
+    }
+
+    .welcome-message {
+        min-height: 400px;
+    }
+
+    .welcome-logo {
+        margin-bottom: 15px;
+    }
+}
+
+/* 设备类型样式适配 */
+body.is-mobile .header {
+    height: 50px;
+}
+
+body.is-mobile .header .logo-text {
+    font-size: 18px;
+}
+
+body.is-mobile .container {
+    margin-top: 50px;
+}
+
+body.is-mobile .welcome-message {
+    padding: 15px;
+}
+
+body.is-mobile .step-item .log-header {
+    padding: 6px 10px;
+}
+
+body.is-mobile .log-prefix {
+    font-size: 0.8em;
+}
+
+body.is-mobile .log-prefix time {
+    font-size: 0.8em;
+}
+
+body.is-mobile .content-preview {
+    font-size: 0.8em;
+}
+
+body.is-tablet .header {
+    height: 55px;
+}
+
+body.is-tablet .container {
+    margin-top: 55px;
+}
+
+/* 触摸设备优化 */
+@media (hover: none) {
+    .tab-btn:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .file-item:hover {
+        transform: none;
+    }
+
+    .task-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .step-item:hover {
+        transform: none;
+    }
+
+    .welcome-logo:hover {
+        transform: none;
+        filter: none;
+    }
+
+    .login-btn:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .send-btn:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* 手机横屏模式优化 */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header {
+        height: 45px;
+    }
+
+    .container {
+        margin-top: 45px;
+    }
+
+    .welcome-message {
+        min-height: 300px;
+        padding: 10px;
+    }
+
+    .welcome-logo {
+        width: 150px;
+    }
+
+    .animated-text {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .input-container {
+        padding: 8px;
+    }
+
+    #prompt-input {
+        padding: 8px;
+    }
+
+    .send-btn {
+        padding: 8px 16px;
+    }
 }

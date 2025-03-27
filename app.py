@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import os
 import threading
@@ -20,8 +21,18 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.websockets import WebSocket, WebSocketDisconnect
+
+# Import Playwright related modules
+from playwright.async_api import async_playwright
 from pydantic import BaseModel
 
+
+# Add global variable to store browser sessions
+browser_sessions = {}
+
+# Add a dictionary to store task and agent associations
+task_agents = {}
 
 app = FastAPI()
 
@@ -71,7 +82,7 @@ class TaskManager:
             task = self.tasks[task_id]
             task.steps.append({"step": step, "result": result, "type": step_type})
             await self.queues[task_id].put(
-                {"type": step_type, "step": step, "result": result}
+                {"type": step_type, "step": step, "result": result, "taskId": task_id}
             )
             await self.queues[task_id].put(
                 {"type": "status", "status": task.status, "steps": task.steps}
@@ -226,6 +237,9 @@ async def run_task(task_id: str, prompt: str):
             description="A versatile agent that can solve various tasks using multiple tools",
         )
 
+        # Save the association between task and agent
+        task_agents[task_id] = agent
+
         async def on_think(thought):
             await task_manager.update_task_step(task_id, 0, thought, "think")
 
@@ -278,6 +292,10 @@ async def run_task(task_id: str, prompt: str):
         await task_manager.complete_task(task_id)
     except Exception as e:
         await task_manager.fail_task(task_id, str(e))
+    finally:
+        # Keep the agent instance for a while after task completion so frontend can view browser content
+        # A timer task can be set here to clean up expired agent instances
+        pass
 
 
 @app.get("/tasks/{task_id}/events")
@@ -380,6 +398,522 @@ def load_config():
         raise RuntimeError(
             f"The configuration file is missing necessary fields: {str(e)}"
         )
+
+
+# Add screenshot API route with live mode option
+@app.post("/api/screenshot")
+async def get_screenshot(request_data: dict = Body(...)):
+    url = request_data.get("url", "")
+    use_live_mode = request_data.get("useLiveMode", False)
+
+    try:
+        print(f"Getting webpage, URL: {url}, Live mode: {use_live_mode}")
+
+        if use_live_mode:
+            # Create live browsing session
+            session_id = str(uuid.uuid4())
+
+            # Launch non-headless browser process
+            async def create_browser_session():
+                playwright_instance = await async_playwright().start()
+                browser = await playwright_instance.chromium.launch(
+                    args=[
+                        "--disable-web-security",
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--remote-debugging-port=0",  # Dynamically assign debug port
+                    ],
+                    headless=False,  # Non-headless mode
+                )
+
+                # Create browser context
+                context = await browser.new_context(
+                    viewport={"width": 1280, "height": 800},
+                    java_script_enabled=True,
+                    ignore_https_errors=True,
+                )
+
+                # Create page
+                page = await context.new_page()
+
+                # Set user agent
+                await page.set_extra_http_headers(
+                    {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
+                    }
+                )
+
+                # Navigate to specified URL
+                try:
+                    await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    await page.wait_for_load_state("networkidle", timeout=10000)
+                except Exception as e:
+                    print(f"Navigation error, but continuing: {str(e)}")
+
+                # Get CDP session info
+                client = await context.new_cdp_session(page)
+
+                # Fix ws_endpoint property access error
+                try:
+                    # Try different methods to get WebSocket endpoint
+                    if hasattr(browser, "wsEndpoint"):
+                        endpoint_url = browser.wsEndpoint
+                    elif hasattr(browser, "ws_endpoint"):
+                        endpoint_url = browser.ws_endpoint
+                    else:
+                        # Use this method in newer versions of playwright
+                        endpoint_url = browser._channel.guid
+                except Exception as e:
+                    print(f"Error getting WebSocket endpoint: {str(e)}")
+                    endpoint_url = "Unable to get endpoint URL"
+
+                # Save session information
+                browser_sessions[session_id] = {
+                    "playwright": playwright_instance,
+                    "browser": browser,
+                    "context": context,
+                    "page": page,
+                    "client": client,
+                    "endpoint_url": endpoint_url,
+                    "created_at": datetime.now(),
+                    "url": url,
+                }
+
+                return {
+                    "session_id": session_id,
+                    "endpoint_url": endpoint_url,
+                    "url": url,
+                }
+
+            session_info = await create_browser_session()
+
+            # Return session information
+            return JSONResponse(
+                content={
+                    "success": True,
+                    "live_mode": True,
+                    "session_id": session_info["session_id"],
+                    "endpoint_url": session_info["endpoint_url"],
+                    "url": url,
+                }
+            )
+        else:
+            # Original screenshot mode logic
+            async with async_playwright() as playwright:
+                # Browser launch options
+                browser = await playwright.chromium.launch(
+                    args=[
+                        "--disable-web-security",
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                    ],
+                    headless=True,
+                )
+
+                # Create browser context
+                context = await browser.new_context(
+                    viewport={"width": 1280, "height": 800},
+                    java_script_enabled=True,
+                    ignore_https_errors=True,
+                )
+
+                # Create page
+                page = await context.new_page()
+
+                # Set user agent
+                await page.set_extra_http_headers(
+                    {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
+                    }
+                )
+
+                try:
+                    # Navigate to specified URL
+                    await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+
+                    # Wait for page load
+                    await page.wait_for_load_state("networkidle", timeout=10000)
+                except Exception as e:
+                    print(f"Navigation error, but continuing: {str(e)}")
+
+                # Try to get page dimensions
+                try:
+                    # Get page dimension information
+                    page_dimensions = await page.evaluate(
+                        """() => {
+                        return {
+                            width: Math.max(
+                                document.body ? document.body.scrollWidth : 0,
+                                document.documentElement ? document.documentElement.scrollWidth : 0,
+                                window.innerWidth || 0
+                            ) || 1280,
+                            height: Math.max(
+                                document.body ? document.body.scrollHeight : 0,
+                                document.documentElement ? document.documentElement.scrollHeight : 0,
+                                window.innerHeight || 0
+                            ) || 900,
+                            windowHeight: window.innerHeight || 900,
+                            windowWidth: window.innerWidth || 1280,
+                            devicePixelRatio: window.devicePixelRatio || 1
+                        }
+                    }"""
+                    )
+                except Exception as e:
+                    print(f"Failed to get page dimensions: {str(e)}")
+                    page_dimensions = {
+                        "width": 1280,
+                        "height": 900,
+                        "windowHeight": 900,
+                        "windowWidth": 1280,
+                        "devicePixelRatio": 1,
+                    }
+
+                try:
+                    # Get screenshot
+                    screenshot = await page.screenshot(
+                        full_page=True, type="jpeg", quality=95
+                    )
+
+                    print(f"Screenshot successful: {len(screenshot)} bytes")
+
+                    # Get webpage title
+                    try:
+                        title = await page.title()
+                    except:
+                        title = url
+
+                    # Close browser
+                    await browser.close()
+
+                    # Convert to Base64 encoding
+                    screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+
+                    # Return screenshot data
+                    return JSONResponse(
+                        content={
+                            "success": True,
+                            "live_mode": False,
+                            "screenshot": screenshot_base64,
+                            "url": url,
+                            "title": title,
+                            "dimensions": page_dimensions,
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
+                except Exception as e:
+                    # If screenshot fails, ensure browser is closed
+                    print(f"Screenshot failed: {str(e)}")
+                    await browser.close()
+                    raise HTTPException(
+                        status_code=500, detail=f"Failed to take screenshot: {str(e)}"
+                    )
+    except Exception as e:
+        print(f"Screenshot service error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Screenshot service error: {str(e)}"
+        )
+
+
+# Add endpoint to get browser session information
+@app.get("/api/browser-session/{session_id}")
+async def get_browser_session(session_id: str):
+    if session_id not in browser_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = browser_sessions[session_id]
+    return {
+        "session_id": session_id,
+        "endpoint_url": session["endpoint_url"],
+        "url": session["url"],
+        "created_at": session["created_at"].isoformat(),
+    }
+
+
+# Add endpoint to close browser session
+@app.delete("/api/browser-session/{session_id}")
+async def close_browser_session(session_id: str):
+    if session_id not in browser_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = browser_sessions[session_id]
+    try:
+        await session["browser"].close()
+        await session["playwright"].stop()
+        del browser_sessions[session_id]
+        return {"message": "Session closed successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to close session: {str(e)}"
+        )
+
+
+# Regularly clean up expired browser sessions
+@app.on_event("startup")
+async def setup_session_cleanup():
+    async def cleanup_sessions():
+        while True:
+            await asyncio.sleep(300)  # Check every 5 minutes
+            now = datetime.now()
+            expired_sessions = []
+
+            for session_id, session in browser_sessions.items():
+                # Sessions over 30 minutes are considered expired
+                if (now - session["created_at"]).total_seconds() > 1800:
+                    expired_sessions.append(session_id)
+
+            for session_id in expired_sessions:
+                try:
+                    session = browser_sessions[session_id]
+                    await session["browser"].close()
+                    await session["playwright"].stop()
+                    del browser_sessions[session_id]
+                    print(f"Expired session cleaned: {session_id}")
+                except Exception as e:
+                    print(f"Error cleaning session: {session_id}, {str(e)}")
+
+    asyncio.create_task(cleanup_sessions())
+
+
+# Add browser content real-time forwarding functionality
+@app.websocket("/ws/browser/{session_id}")
+async def browser_websocket(websocket: WebSocket, session_id: str):
+    await websocket.accept()
+
+    if session_id not in browser_sessions:
+        await websocket.send_json({"error": "Session does not exist"})
+        await websocket.close()
+        return
+
+    session = browser_sessions[session_id]
+    page = session["page"]
+
+    try:
+        # Create channel to forward browser content
+        # First send initial page content
+        try:
+            # Get page HTML content
+            html_content = await page.content()
+            await websocket.send_json({"type": "content", "html": html_content})
+
+            # Get and send page screenshot for initial display
+            screenshot = await page.screenshot(type="jpeg", quality=90)
+            screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+            await websocket.send_json({"type": "screenshot", "data": screenshot_base64})
+
+            # Set up periodic screenshot updates
+            while True:
+                await asyncio.sleep(0.5)  # Update every 0.5 seconds
+
+                try:
+                    # Check if session still exists
+                    if session_id not in browser_sessions:
+                        break
+
+                    # Get latest screenshot
+                    screenshot = await page.screenshot(type="jpeg", quality=80)
+                    screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+                    await websocket.send_json(
+                        {"type": "screenshot", "data": screenshot_base64}
+                    )
+
+                    # Get page title
+                    title = await page.title()
+                    await websocket.send_json({"type": "title", "data": title})
+
+                except Exception as e:
+                    print(f"Error updating browser content: {str(e)}")
+                    break
+
+        except Exception as e:
+            await websocket.send_json(
+                {"type": "error", "message": f"Error getting page content: {str(e)}"}
+            )
+
+    except WebSocketDisconnect:
+        print(f"WebSocket connection closed: {session_id}")
+    except Exception as e:
+        print(f"Browser WebSocket error: {str(e)}")
+    finally:
+        # Note: Don't close the session here as it may be in use elsewhere
+        pass
+
+
+# Add browser control API
+@app.post("/api/browser-action/{session_id}")
+async def browser_action(session_id: str, action: dict = Body(...)):
+    if session_id not in browser_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = browser_sessions[session_id]
+    page = session["page"]
+    action_type = action.get("type")
+
+    try:
+        if action_type == "click":
+            # Click element
+            selector = action.get("selector")
+            if selector:
+                await page.click(selector)
+            else:
+                x = action.get("x", 0)
+                y = action.get("y", 0)
+                await page.mouse.click(x, y)
+            return {"success": True}
+
+        elif action_type == "scroll":
+            # Scroll page
+            x = action.get("x", 0)
+            y = action.get("y", 0)
+            await page.evaluate(f"window.scrollTo({x}, {y})")
+            return {"success": True}
+
+        elif action_type == "input":
+            # Input text
+            selector = action.get("selector")
+            text = action.get("text", "")
+            if selector:
+                await page.fill(selector, text)
+            return {"success": True}
+
+        elif action_type == "navigate":
+            # Navigate to URL
+            url = action.get("url")
+            if url:
+                await page.goto(url)
+            return {"success": True}
+
+        elif action_type == "refresh":
+            # Refresh page
+            await page.reload()
+            return {"success": True}
+
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported operation type: {action_type}"
+            )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error executing browser operation: {str(e)}"
+        )
+
+
+# Add API endpoint to get task browser session info
+@app.get("/api/tasks/{task_id}/browser")
+async def get_task_browser_info(task_id: str):
+    # Check if task exists
+    if task_id not in task_manager.tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Check if there is an associated agent
+    if task_id not in task_agents:
+        raise HTTPException(
+            status_code=404, detail="No agent associated with this task"
+        )
+
+    agent = task_agents[task_id]
+
+    # Get browser session info
+    browser_info = await agent.get_browser_session_info()
+    if not browser_info:
+        raise HTTPException(status_code=404, detail="No browser session for this task")
+
+    # Only return safe information
+    return {
+        "task_id": task_id,
+        "has_browser": True,
+        "endpoint_url": browser_info["endpoint_url"],
+        "initialized": browser_info["initialized"],
+    }
+
+
+# Add WebSocket endpoint to forward browser content in tasks
+@app.websocket("/ws/tasks/{task_id}/browser")
+async def task_browser_websocket(websocket: WebSocket, task_id: str):
+    await websocket.accept()
+
+    # Check if the task exists and has an associated agent
+    if task_id not in task_manager.tasks or task_id not in task_agents:
+        await websocket.send_json(
+            {"error": "Task does not exist or has no associated agent"}
+        )
+        await websocket.close()
+        return
+
+    agent = task_agents[task_id]
+
+    try:
+        # Get browser page
+        page = await agent.get_active_browser_page()
+        if not page:
+            await websocket.send_json({"error": "This task has no active browser page"})
+            await websocket.close()
+            return
+
+        # Start forwarding browser content
+        try:
+            # Get initial page content
+            html_content = await page.content()
+            await websocket.send_json({"type": "content", "html": html_content})
+
+            # Get and send initial screenshot
+            screenshot = await page.screenshot(type="jpeg", quality=90, full_page=True)
+            screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+            await websocket.send_json({"type": "screenshot", "data": screenshot_base64})
+
+            # Get page title
+            title = await page.title()
+            await websocket.send_json({"type": "title", "data": title})
+
+            # Send current URL
+            url = page.url
+            await websocket.send_json({"type": "url", "data": url})
+
+            # Set up periodic screenshot updates
+            while True:
+                await asyncio.sleep(0.5)  # Update every 0.5 seconds
+
+                try:
+                    # Check if task still exists
+                    if task_id not in task_agents:
+                        break
+
+                    # Get latest screenshot
+                    screenshot = await page.screenshot(type="jpeg", quality=80, full_page=True)
+                    screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
+                    await websocket.send_json(
+                        {"type": "screenshot", "data": screenshot_base64}
+                    )
+
+                    # Get page title and URL
+                    new_title = await page.title()
+                    new_url = page.url
+
+                    # Only send when changes occur
+                    if new_title != title:
+                        title = new_title
+                        await websocket.send_json({"type": "title", "data": title})
+
+                    if new_url != url:
+                        url = new_url
+                        await websocket.send_json({"type": "url", "data": url})
+
+                except Exception as e:
+                    print(f"Error updating task browser content: {str(e)}")
+                    break
+
+        except Exception as e:
+            await websocket.send_json(
+                {"type": "error", "message": f"Error getting page content: {str(e)}"}
+            )
+
+    except WebSocketDisconnect:
+        print(f"Task browser WebSocket connection closed: {task_id}")
+    except Exception as e:
+        print(f"Task browser WebSocket error: {str(e)}")
+    finally:
+        # Don't close the browser session as it may still be in use by the task
+        pass
 
 
 if __name__ == "__main__":
