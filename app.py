@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import threading
 import tomllib
@@ -24,8 +25,8 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="web/static"), name="static")
+templates = Jinja2Templates(directory="web/templates")
 
 app.add_middleware(
     CORSMiddleware,
@@ -94,9 +95,108 @@ class TaskManager:
 task_manager = TaskManager()
 
 
+def get_available_themes():
+    """Scan themes directory to get all available themes"""
+    themes_dir = "web/static/themes"
+    if not os.path.exists(themes_dir):
+        return [{"id": "openmanus", "name": "Manus", "description": "Default theme"}]
+
+    themes = []
+    for item in os.listdir(themes_dir):
+        theme_path = os.path.join(themes_dir, item)
+        if os.path.isdir(theme_path):
+            # Verify if the theme folder contains necessary files
+            templates_dir = os.path.join(theme_path, "templates")
+            static_dir = os.path.join(theme_path, "static")
+            config_file = os.path.join(theme_path, "theme.json")
+
+            if os.path.exists(templates_dir) and os.path.exists(static_dir):
+                if os.path.exists(os.path.join(templates_dir, "chat.html")):
+                    theme_info = {"id": item, "name": item, "description": ""}
+
+                    # If there is a configuration file, read the theme name and description
+                    if os.path.exists(config_file):
+                        try:
+                            with open(config_file, "r", encoding="utf-8") as f:
+                                config = json.load(f)
+                                theme_info["name"] = config.get("name", item)
+                                theme_info["description"] = config.get(
+                                    "description", ""
+                                )
+                        except Exception as e:
+                            print(f"Error reading theme configuration file: {str(e)}")
+
+                    themes.append(theme_info)
+
+    # Ensure Normal theme always exists
+    normal_exists = any(theme["id"] == "openmanus" for theme in themes)
+    if not normal_exists:
+        themes.append(
+            {"id": "openmanus", "name": "Manus", "description": "Default theme"}
+        )
+
+    return themes
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # Get available theme list
+    themes = get_available_themes()
+
+    # Sort themes: Normal first, cyberpunk second, other themes in original order
+    sorted_themes = []
+    normal_theme = None
+    cyberpunk_theme = None
+    other_themes = []
+
+    for theme in themes:
+        if theme["id"] == "openmanus":
+            normal_theme = theme
+        elif theme["id"] == "cyberpunk":
+            cyberpunk_theme = theme
+        else:
+            other_themes.append(theme)
+
+    # Combine themes in specified order
+    if normal_theme:
+        sorted_themes.append(normal_theme)
+    if cyberpunk_theme:
+        sorted_themes.append(cyberpunk_theme)
+    sorted_themes.extend(other_themes)
+
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "themes": sorted_themes}
+    )
+
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat(request: Request):
+    theme = request.query_params.get("theme", "openmanus")
+    # Try to load chat.html from theme folder
+    theme_chat_path = f"web/static/themes/{theme}/templates/chat.html"
+    if os.path.exists(theme_chat_path):
+        with open(theme_chat_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Read theme configuration file
+        theme_config_path = f"web/static/themes/{theme}/theme.json"
+        theme_name = theme
+        if os.path.exists(theme_config_path):
+            try:
+                with open(theme_config_path, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+                    theme_name = config.get("name", theme)
+            except Exception:
+                pass
+
+        # Add theme name to HTML title
+        content = content.replace(
+            "<title>Manus</title>", f"<title>Manus - {theme_name}</title>"
+        )
+        return HTMLResponse(content=content)
+    else:
+        # Default use templates chat.html
+        return templates.TemplateResponse("chat.html", {"request": request})
 
 
 @app.get("/download")
