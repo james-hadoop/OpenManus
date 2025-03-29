@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenManus</title>
+    <link rel="stylesheet" href="/static/themes/cyberpunk_v2/static/cyberpunk_v2.css">
+    <link rel="stylesheet" href="/static/themes/cyberpunk_v2/static/workspace.css">
+    <!-- Add Font Awesome icon library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 添加霓虹灯字体效果 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Top navigation bar -->
+    <header class="header">
+        <div class="header-left">
+            <a href="/" class="logo">
+                <span class="logo-text">OpenManus</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <!-- History icon button - using CSS class -->
+            <button class="history-toggle">
+                <i class="fas fa-history"></i>
+                <span class="history-count">0</span>
+            </button>
+            <a href="#" class="login-btn">
+                <i class="fas fa-user"></i>
+                Login
+            </a>
+        </div>
+    </header>
+
+    <!-- History panel -->
+    <aside class="history-panel">
+        <div class="history-header">
+            <div class="history-title">History</div>
+            <div class="history-actions">
+                <button class="history-action-btn" title="Refresh" onclick="loadHistory()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div id="task-list" class="task-list">
+            <!-- Task list will be dynamically loaded through JavaScript -->
+        </div>
+    </aside>
+
+    <!-- Background overlay -->
+    <div class="overlay"></div>
+
+    <!-- Main container -->
+    <div class="container">
+        <!-- Left panel: AI thinking and logs -->
+        <div class="main-panel">
+            <div id="task-container" class="task-container">
+                <div class="welcome-message">
+                    <!-- 添加霓虹网格和装饰性元素 -->
+                    <div class="cyberpunk-grid"></div>
+                    <div class="cyberpunk-circles"></div>
+
+                    <!-- 添加大型标志动画 -->
+                    <div class="logo-animation">
+                        <img src="/static/images/logo/logo_gradient.png" alt="OpenManus Logo" class="welcome-logo">
+                        <div class="logo-glitch"></div>
+                    </div>
+
+                    <h1 class="cyberpunk-title" data-text="OpenManus">OpenManus</h1>
+
+                    <p class="highlight-text" data-text="Your autonomous intelligent assistant">Your autonomous
+                        intelligent assistant</p>
+                    <div class="animated-subtext">Ready to help with anything, anytime</div>
+
+                    <!-- 添加装饰性霓虹按钮 -->
+                    <div class="cyberpunk-buttons">
+                        <div class="cyberpunk-button">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="cyberpunk-button">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="cyberpunk-button">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                    </div>
+                </div>
+                <div id="steps-container" class="steps-container"></div>
+            </div>
+
+            <div class="input-container">
+                <input type="text" id="prompt-input" placeholder="Type your question here...">
+                <button onclick="createTask()" class="send-btn">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+        </div>
+
+        <!-- Right panel: Workspace -->
+        <div id="workspace-panel" class="workspace-panel">
+            <div class="workspace-header">
+                <h2>Workspace</h2>
+                <div class="workspace-tabs">
+                    <button class="tab-btn active" data-tab="browser">
+                        <i class="fas fa-globe"></i> Browser
+                    </button>
+                    <button class="tab-btn" data-tab="editor">
+                        <i class="fas fa-code"></i> Editor
+                    </button>
+                    <button class="tab-btn" data-tab="terminal">
+                        <i class="fas fa-terminal"></i> Terminal
+                    </button>
+                    <button class="tab-btn" data-tab="files">
+                        <i class="fas fa-folder"></i> Files
+                    </button>
+                </div>
+            </div>
+
+            <div class="workspace-content">
+                <div id="browser-tab" class="workspace-tab active">
+                    <div class="browser-container">
+                        <div class="task-browser-container">
+                            <div class="task-browser-header">
+                                <div class="task-browser-title">Task Browser</div>
+                                <div class="task-browser-url">Waiting for connection...</div>
+                                <div class="task-browser-actions">
+                                    <button class="refresh-browser-btn" title="Refresh">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="task-browser-view">
+                                <div class="task-browser-loading">
+                                    <i class="fas fa-spinner fa-spin"></i> Connecting to task browser...
+                                </div>
+                            </div>
+                            <div class="task-browser-status">Not Connected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="editor-tab" class="workspace-tab">
+                    <div class="editor-container">
+                        <div class="file-path">No file selected</div>
+                        <div class="code-editor">
+                            <!-- 添加一些编辑器效果 -->
+                            <div class="code-line">// Welcome to the OpenManus code editor</div>
+                            <div class="code-line">// The future of autonomous coding assistance</div>
+                            <div class="code-line"></div>
+                            <div class="code-line">function initSystem() {</div>
+                            <div class="code-line indent">console.log("OpenManus system initialized");</div>
+                            <div class="code-line indent">return "Ready to assist!";</div>
+                            <div class="code-line">}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="terminal-tab" class="workspace-tab">
+                    <div class="terminal-container">
+                        <div class="terminal-output">
+                            <!-- 添加一些终端效果 -->
+                            <div class="terminal-line">Welcome to OpenManus Terminal v1.0</div>
+                            <div class="terminal-line">Copyright © 2023 OpenManus AI</div>
+                            <div class="terminal-line">---------------------------------</div>
+                            <div class="terminal-line">System initialized and ready.</div>
+                            <div class="terminal-line">Type your commands below...</div>
+                            <div class="terminal-line"></div>
+                        </div>
+                        <div class="terminal-input-line">
+                            <span class="terminal-prompt">$</span>
+                            <input type="text" class="terminal-input" placeholder="Enter command...">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="files-tab" class="workspace-tab">
+                    <div class="files-container">
+                        <div class="files-toolbar">
+                            <button><i class="fas fa-file"></i> New</button>
+                            <button><i class="fas fa-folder-plus"></i> New Folder</button>
+                            <button><i class="fas fa-upload"></i> Upload</button>
+                        </div>
+                        <div class="file-explorer">
+                            <!-- 添加一些默认文件 -->
+                            <div class="folder-item file-item">
+                                <div class="file-icon"><i class="fas fa-folder"></i></div>
+                                <div class="file-name">project</div>
+                            </div>
+                            <div class="file-item">
+                                <div class="file-icon"><i class="fas fa-file-code"></i></div>
+                                <div class="file-name">index.html</div>
+                            </div>
+                            <div class="file-item">
+                                <div class="file-icon"><i class="fas fa-file-code"></i></div>
+                                <div class="file-name">styles.css</div>
+                            </div>
+                            <div class="file-item">
+                                <div class="file-icon"><i class="fas fa-file-code"></i></div>
+                                <div class="file-name">script.js</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main_v2.js"></script>
+</body>
+
+</html>

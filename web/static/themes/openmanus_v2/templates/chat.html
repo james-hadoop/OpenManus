@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenManus</title>
+    <link rel="stylesheet" href="/static/themes/openmanus_v2/static/openmanus_v2.css">
+    <link rel="stylesheet" href="/static/themes/openmanus_v2/static/workspace.css">
+    <!-- Add Font Awesome icon library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Top navigation bar -->
+    <header class="header">
+        <div class="header-left">
+            <a href="/" class="logo">
+                <span class="logo-text">OpenManus</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <!-- History icon button - using CSS class -->
+            <button class="history-toggle">
+                <i class="fas fa-history"></i>
+                <span class="history-count">0</span>
+            </button>
+            <a href="#" class="login-btn">
+                <i class="fas fa-user"></i>
+                Login
+            </a>
+        </div>
+    </header>
+
+    <!-- History panel -->
+    <aside class="history-panel">
+        <div class="history-header">
+            <div class="history-title">History</div>
+            <div class="history-actions">
+                <button class="history-action-btn" title="Refresh" onclick="loadHistory()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div id="task-list" class="task-list">
+            <!-- Task list will be dynamically loaded through JavaScript -->
+        </div>
+    </aside>
+
+    <!-- Background overlay -->
+    <div class="overlay"></div>
+
+    <!-- Main container -->
+    <div class="container">
+        <!-- Left panel: AI thinking and logs -->
+        <div class="main-panel">
+            <div id="task-container" class="task-container">
+                <div class="welcome-message">
+                    <!-- Add large logo animation -->
+                    <div class="logo-animation">
+                        <img src="/static/images/logo/logo_black.png" alt="OpenManus Logo" class="welcome-logo">
+                    </div>
+
+                    <p class="highlight-text">Your autonomous intelligent assistant</p>
+                    <div class="animated-subtext">Ready to help with anything, anytime</div>
+                </div>
+                <div id="steps-container" class="steps-container"></div>
+            </div>
+
+            <div class="input-container">
+                <input type="text" id="prompt-input" placeholder="Type your question here...">
+                <button onclick="createTask()" class="send-btn">Send</button>
+            </div>
+        </div>
+
+        <!-- Right panel: Workspace -->
+        <div id="workspace-panel" class="workspace-panel">
+            <div class="workspace-header">
+                <h2>Workspace</h2>
+                <div class="workspace-tabs">
+                    <button class="tab-btn active" data-tab="browser">
+                        <i class="fas fa-globe"></i> Browser
+                    </button>
+                    <button class="tab-btn" data-tab="editor">
+                        <i class="fas fa-code"></i> Editor
+                    </button>
+                    <button class="tab-btn" data-tab="terminal">
+                        <i class="fas fa-terminal"></i> Terminal
+                    </button>
+                    <button class="tab-btn" data-tab="files">
+                        <i class="fas fa-folder"></i> Files
+                    </button>
+                </div>
+            </div>
+
+            <div class="workspace-content">
+                <div id="browser-tab" class="workspace-tab active">
+                    <div class="browser-container">
+                        <div class="task-browser-container">
+                            <div class="task-browser-header">
+                                <div class="task-browser-title">Task Browser</div>
+                                <div class="task-browser-url">Waiting for connection...</div>
+                                <div class="task-browser-actions">
+                                    <button class="refresh-browser-btn" title="Refresh">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="task-browser-view">
+                                <div class="task-browser-loading">
+                                    <i class="fas fa-spinner fa-spin"></i> Connecting to task browser...
+                                </div>
+                            </div>
+                            <div class="task-browser-status">Not Connected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="editor-tab" class="workspace-tab">
+                    <div class="editor-container">
+                        <div class="file-path">No file selected</div>
+                        <div class="code-editor"></div>
+                    </div>
+                </div>
+
+                <div id="terminal-tab" class="workspace-tab">
+                    <div class="terminal-container">
+                        <div class="terminal-output"></div>
+                        <div class="terminal-input-line">
+                            <span class="terminal-prompt">$</span>
+                            <input type="text" class="terminal-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="files-tab" class="workspace-tab">
+                    <div class="files-container">
+                        <div class="files-toolbar">
+                            <button><i class="fas fa-file"></i> New</button>
+                            <button><i class="fas fa-folder-plus"></i> New Folder</button>
+                            <button><i class="fas fa-upload"></i> Upload</button>
+                        </div>
+                        <div class="file-explorer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main_v2.js"></script>
+</body>
+
+</html>

@@ -37,6 +37,61 @@ class Manus(BrowserAgent):
         )
     )
 
+    # Add a property to expose browser tool
+    @property
+    def browser_tool(self) -> BrowserUseTool:
+        """Get browser tool instance"""
+        for tool in self.available_tools.tools:
+            if isinstance(tool, BrowserUseTool):
+                return tool
+        return None
+
+    # Add a method to get current active browser page
+    async def get_active_browser_page(self):
+        """Get current active browser page"""
+        browser_tool = self.browser_tool
+        if browser_tool and browser_tool.context:
+            # Ensure context is initialized
+            if not browser_tool.context:
+                await browser_tool._ensure_browser_initialized()
+
+            # Get current page
+            return await browser_tool.context.get_current_page()
+        return None
+
+    # Add method to get browser session information
+    async def get_browser_session_info(self):
+        """Get browser session information, including WebSocket endpoint"""
+        browser_tool = self.browser_tool
+        if not browser_tool:
+            return None
+
+        # Ensure context is initialized
+        if not browser_tool.context:
+            await browser_tool._ensure_browser_initialized()
+
+        if browser_tool.browser:
+            # Try different methods to get WebSocket endpoint
+            try:
+                if hasattr(browser_tool.browser.browser, "wsEndpoint"):
+                    endpoint_url = browser_tool.browser.browser.wsEndpoint
+                elif hasattr(browser_tool.browser.browser, "ws_endpoint"):
+                    endpoint_url = browser_tool.browser.browser.ws_endpoint
+                else:
+                    # Use this method in newer versions of playwright
+                    endpoint_url = browser_tool.browser.browser._channel.guid
+            except Exception as e:
+                print(f"Error getting WebSocket endpoint: {str(e)}")
+                endpoint_url = None
+
+            return {
+                "browser": browser_tool.browser,
+                "context": browser_tool.context,
+                "endpoint_url": endpoint_url,
+                "initialized": browser_tool.context is not None,
+            }
+        return None
+
     async def think(self) -> bool:
         """Process current state and decide next actions with appropriate context."""
         # Store original prompt

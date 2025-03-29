@@ -1,0 +1,690 @@
+:root {
+    --workspace-bg: #ffffff;
+    --workspace-header-bg: #f5f5f5;
+    --border-color: #e0e0e0;
+    --text-light: #666;
+    --primary-color: #0066cc;
+    --dark-color: #333;
+    --terminal-bg: #1e1e1e;
+    --terminal-text: #f8f8f8;
+    --code-editor-bg: #1e1e1e;
+}
+
+
+
+/* Workspace Panel */
+.workspace-panel {
+    width: 40%;
+    height: calc(100vh - 80px);
+    background-color: var(--workspace-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Workspace Header */
+.workspace-header {
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.95),
+            rgba(250, 250, 250, 0.9));
+    padding: 15px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    position: relative;
+    z-index: 2;
+}
+
+.workspace-header h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: var(--dark-color);
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Workspace Tabs */
+.workspace-tabs {
+    display: flex;
+    gap: 3px;
+    margin: 0 -5px;
+    position: relative;
+    padding: 0 5px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-light);
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    color: var(--dark-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tab-btn.active {
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.95),
+            rgba(255, 255, 255, 0.85));
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 -2px 0 var(--primary-color);
+    font-weight: 600;
+}
+
+.tab-btn i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.tab-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Workspace Content */
+.workspace-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.95),
+            rgba(252, 252, 252, 0.9));
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.workspace-tab {
+    display: none;
+    height: 100%;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.workspace-tab.active {
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+}
+
+/* Browser Container */
+.browser-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+.task-browser-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.task-browser-header {
+    flex-shrink: 0;
+    padding: 10px 15px;
+    background: linear-gradient(to bottom,
+            rgba(250, 250, 250, 0.95),
+            rgba(245, 245, 245, 0.9));
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.task-browser-view {
+    flex: 1;
+    position: relative;
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: auto;
+    background-color: #f5f5f5;
+}
+
+.task-browser-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: scale-down;
+    object-position: top;
+    position: relative;
+    z-index: 1003;
+    transform-origin: top;
+}
+
+.task-browser-url {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-light);
+    font-size: 13px;
+    margin: 0 10px;
+}
+
+.task-browser-title {
+    font-weight: 500;
+    color: var(--dark-color);
+    font-size: 14px;
+}
+
+.task-browser-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.refresh-browser-btn {
+    padding: 4px 8px;
+    border: none;
+    background: none;
+    color: var(--text-light);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.refresh-browser-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--dark-color);
+}
+
+.task-browser-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-light);
+    font-size: 14px;
+    z-index: 1004;
+}
+
+.task-browser-loading i {
+    color: var(--primary-color);
+    font-size: 18px;
+    animation: spin 1.2s linear infinite;
+}
+
+.task-browser-status {
+    flex-shrink: 0;
+    padding: 8px 15px;
+    background: linear-gradient(to bottom,
+            rgba(250, 250, 250, 0.95),
+            rgba(245, 245, 245, 0.9));
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-light);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-browser-status::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ff4444;
+    box-shadow: 0 0 8px rgba(255, 68, 68, 0.4);
+}
+
+.task-browser-status.connected::before {
+    background-color: #00c853;
+    box-shadow: 0 0 8px rgba(0, 200, 83, 0.4);
+}
+
+/* Editor Container */
+.editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--code-editor-bg);
+    margin: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.file-path {
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--terminal-text);
+    font-size: 12px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-path::before {
+    content: '📄';
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.code-editor {
+    flex: 1;
+    overflow: auto;
+    padding: 15px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--terminal-text);
+    background: linear-gradient(to bottom,
+            rgba(30, 30, 30, 0.95),
+            rgba(25, 25, 25, 0.9));
+}
+
+/* Terminal Container */
+.terminal-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--terminal-bg);
+    color: var(--terminal-text);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    margin: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.terminal-output {
+    flex: 1;
+    overflow: auto;
+    padding: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    background: linear-gradient(to bottom,
+            rgba(30, 30, 30, 0.95),
+            rgba(25, 25, 25, 0.9));
+}
+
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminal-prompt {
+    color: #0f0;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.terminal-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--terminal-text);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    outline: none;
+}
+
+/* File Container */
+.files-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.95),
+            rgba(252, 252, 252, 0.9));
+    margin: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.files-toolbar {
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 8px;
+    background: linear-gradient(to bottom,
+            rgba(250, 250, 250, 0.95),
+            rgba(245, 245, 245, 0.9));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.files-toolbar button {
+    padding: 8px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.9),
+            rgba(250, 250, 250, 0.8));
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--dark-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.files-toolbar button:hover {
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.95),
+            rgba(255, 255, 255, 0.85));
+    border-color: rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.file-explorer {
+    flex: 1;
+    overflow: auto;
+    padding: 15px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--dark-color);
+    margin-bottom: 4px;
+}
+
+.file-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+    transform: translateX(4px);
+}
+
+.file-item.selected {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.file-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-light);
+}
+
+.folder-item .file-icon {
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.file-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.task-browser-connecting {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin: 20px;
+}
+
+.task-browser-connecting .connecting-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.task-browser-connecting .connecting-status i {
+    color: #0066cc;
+    font-size: 18px;
+}
+
+.task-browser-connecting .connecting-status span {
+    color: #495057;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.task-browser-connecting .task-id {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 102, 204, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 4px;
+}
+
+.task-browser-connecting .task-id i {
+    color: #0066cc;
+    font-size: 14px;
+}
+
+.task-browser-connecting .task-id span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: #0066cc;
+    word-break: break-all;
+}
+
+/* 工作区响应式设计 */
+@media (max-width: 1200px) {
+    .workspace-panel {
+        width: 100%;
+        height: auto;
+        min-height: 500px;
+    }
+
+    .browser-container,
+    .task-browser-container {
+        height: 600px;
+    }
+
+    .workspace-header h2 {
+        font-size: 14px;
+    }
+
+    .tab-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .workspace-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 5px;
+    }
+
+    .workspace-tabs::-webkit-scrollbar {
+        height: 3px;
+    }
+
+    .workspace-tabs::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+
+    .tab-btn {
+        padding: 5px 10px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .browser-container,
+    .task-browser-container {
+        height: 450px;
+    }
+
+    .task-browser-view {
+        height: calc(450px - 80px);
+        /* 容器高度减去头部和底部 */
+    }
+
+    .file-explorer {
+        padding: 10px;
+    }
+
+    .file-item {
+        padding: 6px 8px;
+    }
+
+    .file-name {
+        font-size: 12px;
+    }
+
+    .terminal-output,
+    .code-editor {
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .terminal-input-line {
+        padding: 8px 10px;
+    }
+
+    .terminal-input {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .files-toolbar {
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 8px;
+    }
+
+    .files-toolbar button {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+
+    .file-path {
+        font-size: 10px;
+        padding: 8px 10px;
+    }
+
+    .browser-container,
+    .task-browser-container {
+        height: 350px;
+    }
+
+    .task-browser-view {
+        height: calc(350px - 80px);
+    }
+
+    .task-browser-connecting {
+        padding: 15px;
+        margin: 10px;
+        font-size: 13px;
+    }
+
+    .task-browser-connecting .task-id span {
+        font-size: 12px;
+    }
+}
+
+/* 针对高度的响应式设计 */
+@media (max-height: 700px) {
+    .workspace-panel {
+        height: calc(100vh - 60px);
+        min-height: 400px;
+    }
+
+    .browser-container,
+    .task-browser-container {
+        height: 400px;
+    }
+
+    .task-browser-view {
+        height: calc(400px - 80px);
+    }
+}
+
+@media (max-height: 500px) {
+
+    .browser-container,
+    .task-browser-container {
+        height: 300px;
+    }
+
+    .task-browser-view {
+        height: calc(300px - 70px);
+    }
+
+    .workspace-header {
+        padding: 10px;
+    }
+}
