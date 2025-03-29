@@ -879,7 +879,9 @@ async def task_browser_websocket(websocket: WebSocket, task_id: str):
                         break
 
                     # Get latest screenshot
-                    screenshot = await page.screenshot(type="jpeg", quality=80, full_page=True)
+                    screenshot = await page.screenshot(
+                        type="jpeg", quality=80, full_page=True
+                    )
                     screenshot_base64 = base64.b64encode(screenshot).decode("utf-8")
                     await websocket.send_json(
                         {"type": "screenshot", "data": screenshot_base64}

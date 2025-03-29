@@ -2065,8 +2065,3 @@ function collectFormData() {
 
     return configData;
 }
-
-
-
-
-
