@@ -1525,9 +1525,11 @@ const app = Vue.createApp({
                 }
 
                 const response = await axios.delete(`/api/files/${filePath}`);
-                if (response.data && response.data.success) {
+                if (response.data && response.data.message) {
                     this.workspaceFiles = this.workspaceFiles.filter(file => file.path !== filePath);
                     this.showNotification(this.$t('file_deleted').replace('${filename}', filePath), 'success');
+                    // Refresh file list
+                    this.refreshFiles();
                 }
             } catch (error) {
                 console.error('Failed to delete file:', error);
