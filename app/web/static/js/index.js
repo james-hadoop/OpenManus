@@ -776,6 +776,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize background effects
     initBackgroundEffects();
+
+    // Initialize language selector
+    initLanguageSelector();
+
+    // Apply translations
+    window.i18n.applyTranslations();
 });
 
 // For development environment only - clear session state
@@ -787,3 +793,61 @@ function resetVisitState() {
 
 // Comment out the line below to disable automatic reset (for development use only)
 // resetVisitState();
+
+// Initialize language selector
+function initLanguageSelector() {
+    const languageBtn = document.getElementById('language-btn');
+    const languageDropdown = document.getElementById('language-dropdown');
+    const languageOptions = document.querySelectorAll('.language-option');
+
+    // Show/hide language selection dropdown
+    languageBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        languageDropdown.classList.toggle('active');
+    });
+
+    // Click other areas of the page to close the dropdown
+    document.addEventListener('click', () => {
+        languageDropdown.classList.remove('active');
+    });
+
+    // Prevent the dropdown from closing when clicked
+    languageDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    // Language selection processing
+    languageOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            const lang = option.getAttribute('data-lang');
+            if (lang) {
+                // Update active status style
+                languageOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+
+                // Set language and close dropdown
+                window.i18n.setLanguage(lang);
+                languageDropdown.classList.remove('active');
+
+                // Add language switch animation effect
+                document.body.classList.add('language-transition');
+                setTimeout(() => {
+                    document.body.classList.remove('language-transition');
+                }, 500);
+            }
+        });
+    });
+
+    // Set active status based on current language
+    const currentLang = window.i18n.getLanguage();
+    const activeOption = document.querySelector(`.language-option[data-lang="${currentLang}"]`);
+    if (activeOption) {
+        activeOption.classList.add('active');
+    }
+}
+
+// Listen for language change events
+document.addEventListener('languageChanged', () => {
+    // Reapply all text translations
+    window.i18n.applyTranslations();
+});

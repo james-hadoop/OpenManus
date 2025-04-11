@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenManus - AI Intelligent Assistant</title>
+    <title data-i18n="chat_title">OpenManus - AI Intelligent Assistant</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
     <!-- Import Axios for HTTP requests -->
@@ -22,6 +22,24 @@
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <!-- Add Meta theme color -->
     <meta name="theme-color" content="#0c1426">
+    <!-- Import i18n script -->
+    <script src="{{ url_for('static', filename='js/i18n-bridge.js') }}"></script>
+    <!-- Import Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* Add sr-only class, for screen readers visible but visually hidden elements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -51,7 +69,7 @@
                     <!-- Session ID display -->
                     <div class="session-id-display">
                         <i class="fas fa-fingerprint"></i>
-                        <span>${sessionId || 'Not connected'}</span>
+                        <span data-i18n="session_id_label">${sessionId || 'Not connected'}</span>
                     </div>
 
                     <!-- Add notification area in navbar -->
@@ -73,18 +91,21 @@
                     </div>
 
                     <!-- Add history button -->
-                    <a href="/history" class="nav-button" title="历史记录">
+                    <a href="/history" class="nav-button">
                         <i class="fas fa-history"></i>
+                        <span class="sr-only" data-i18n="nav_history">History</span>
                     </a>
 
                     <button class="theme-toggle" @click="toggleTheme"
                         :title="isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'">
                         <i class="fas" :class="isDarkTheme ? 'fa-moon' : 'fa-sun'"></i>
+                        <span class="sr-only" data-i18n="toggle_theme">Toggle theme</span>
                     </button>
 
                     <!-- Add configuration button -->
-                    <button class="config-toggle" @click="toggleConfigPanel" :title="'系统配置'">
+                    <button class="config-toggle" @click="toggleConfigPanel">
                         <i class="fas fa-wrench"></i>
+                        <span class="sr-only" data-i18n="config_button">Configuration</span>
                     </button>
 
                     <a href="https://github.com/mannaandpoem/OpenManus" target="_blank"
@@ -103,15 +124,19 @@
                 <div class="tool-section system-info">
                     <div class="tool-header">
                         <i class="fas fa-info-circle"></i>
-                        <h3>System Information</h3>
+                        <h3 data-i18n="system_info">System Information</h3>
                     </div>
                     <div class="info-content">
                         <p class="system-info-text">
-                            <span class="system-highlight">OpenManus</span> <span class="system-emoji">✨</span> is an
-                            intelligent agent platform based on
-                            large language models <span class="system-emoji">🤖</span>, integrating diverse tool
-                            capabilities <span class="system-emoji">🛠️</span>, supporting complex task
-                            execution <span class="system-emoji">🚀</span> and automation processes <span
+                            <span class="system-highlight" data-i18n="system_name">OpenManus</span> <span
+                                class="system-emoji">✨</span> <span data-i18n="system_description_1">is an
+                                intelligent agent platform based on
+                                large language models</span> <span class="system-emoji">🤖</span>, <span
+                                data-i18n="system_description_2">integrating diverse tool
+                                capabilities</span> <span class="system-emoji">🛠️</span>, <span
+                                data-i18n="system_description_3">supporting complex task
+                                execution</span> <span class="system-emoji">🚀</span> <span
+                                data-i18n="system_description_4">and automation processes</span> <span
                                 class="system-emoji">⚙️</span>.
                         </p>
                     </div>
@@ -120,17 +145,18 @@
                 <div class="tool-section">
                     <div class="tool-header">
                         <i class="fas fa-bolt"></i>
-                        <h3>Session Control</h3>
+                        <h3 data-i18n="session_control">Session Control</h3>
                     </div>
                     <div class="tool-buttons">
                         <button @click="createNewSession" class="primary-btn">
                             <i class="fas fa-plus"></i>
-                            <span>New Session</span>
+                            <span data-i18n="chat_new_session">New Session</span>
                         </button>
                         <button @click="terminateSession" :disabled="!isConnected" class="secondary-btn">
                             <i class="fas"
                                 :class="[isProcessing && !isConnected ? 'fa-spinner fa-spin' : 'fa-stop']"></i>
-                            <span>${isProcessing && !isConnected ? 'Terminating' : 'Terminate'}</span>
+                            <span data-i18n="chat_terminate">${isProcessing && !isConnected ? 'Terminating' :
+                                'Terminate'}</span>
                         </button>
                     </div>
                 </div>
@@ -139,7 +165,7 @@
                 <div class="tool-section">
                     <div class="tool-header">
                         <i class="fas fa-folder-open"></i>
-                        <h3>File Browser</h3>
+                        <h3 data-i18n="files_title">File Browser</h3>
                         <button @click="refreshFiles" class="refresh-btn" title="Refresh file list">
                             <i class="fas fa-sync-alt"></i>
                         </button>
@@ -174,7 +200,7 @@
                 <div class="tool-section tools-container">
                     <div class="tool-header">
                         <i class="fas fa-tools"></i>
-                        <h3>Tool List</h3>
+                        <h3 data-i18n="tools_title">Tool List</h3>
                     </div>
 
                     <div class="tools-panel">
@@ -205,7 +231,7 @@
                 <div class="current-task" v-if="lastUserMessage">
                     <div class="task-label">
                         <i class="fas fa-tasks"></i>
-                        <span>Current Task:</span>
+                        <span data-i18n="current_task_label">Current Task:</span>
                     </div>
                     <div class="task-content">
                         <span v-html="formatMessage(lastUserMessage.content)"></span>
@@ -218,7 +244,7 @@
                     <div class="messages-column agent-messages" ref="agentMessagesContainer">
                         <div class="column-header">
                             <i class="fas fa-robot"></i>
-                            <span>Manus Agent</span>
+                            <span data-i18n="agent_column_title">Manus Agent</span>
                         </div>
 
                         <div class="column-content">
@@ -226,7 +252,7 @@
                                 :class="['message', message.role, message.class]">
                                 <div class="message-header">
                                     <div class="message-role">
-                                        <span>Manus</span>
+                                        <span data-i18n="agent_name">Manus</span>
                                     </div>
                                     <span class="message-time">${formatTime(message.time)}</span>
                                 </div>
@@ -241,10 +267,11 @@
                                         <div class="manus-eye"></div>
                                     </div>
                                     <span class="thinking-text" v-if="agentStatus.currentStep > 0">
-                                        Manus is processing... (Step ${agentStatus.currentStep}/${agentStatus.maxSteps})
+                                        <span data-i18n="processing_step">Manus is processing... (Step
+                                            ${agentStatus.currentStep}/${agentStatus.maxSteps})</span>
                                     </span>
                                     <span class="thinking-text" v-else>
-                                        Manus is thinking...
+                                        <span data-i18n="thinking">Manus is thinking...</span>
                                     </span>
                                 </div>
                             </div>
@@ -254,8 +281,8 @@
                         <div class="agent-input-area">
                             <div class="input-container">
                                 <textarea v-model="userInput" @keydown.enter.ctrl="sendMessage"
-                                    :disabled="isProcessing || !isConnected"
-                                    placeholder="Enter command, Ctrl+Enter to send" ref="userInputArea"></textarea>
+                                    :disabled="isProcessing || !isConnected" :placeholder="$t('chat_input_placeholder')"
+                                    ref="userInputArea"></textarea>
 
                                 <div class="input-actions">
                                     <button class="action-btn" title="Upload File" @click.stop="openUploadModal">
@@ -276,15 +303,16 @@
                         v-show="toolMessages.length > 0">
                         <div class="column-header">
                             <i class="fas fa-tools"></i>
-                            <span>OpenManus</span>
+                            <span data-i18n="tool_column_title">OpenManus</span>
                         </div>
 
                         <!-- Current tool in use display -->
                         <div class="current-tool-display" v-if="currentToolInUse">
                             <i v-if="currentToolInUse === 'terminate'" class="fas fa-check-circle completed-icon"></i>
                             <i v-else class="fas fa-cog"></i>
-                            <span v-if="currentToolInUse === 'terminate'">Manus is completed</span>
-                            <span v-else>Manus in use: ${currentToolInUse}</span>
+                            <span v-if="currentToolInUse === 'terminate'" data-i18n="manus_completed">Manus is
+                                completed</span>
+                            <span v-else data-i18n="manus_in_use">Manus in use: ${currentToolInUse}</span>
                         </div>
 
                         <div class="column-content">
@@ -293,7 +321,7 @@
                                 <div class="message-header">
                                     <div class="message-role">
                                         <i class="fas fa-tools"></i>
-                                        <span>${message.name || 'Tool Output'}</span>
+                                        <span data-i18n="tool_output">${message.name || 'Tool Output'}</span>
                                     </div>
                                     <span class="message-time">${formatTime(message.time)}</span>
                                 </div>
@@ -302,7 +330,8 @@
                                     <!-- Image display -->
                                     <div v-if="message.base64_image" class="image-container">
                                         <div class="screenshot-note">
-                                            <i class="fas fa-info-circle"></i> Current visible area screenshot
+                                            <i class="fas fa-info-circle"></i> <span data-i18n="screenshot_note">Current
+                                                visible area screenshot</span>
                                         </div>
                                         <img :src="'data:image/png;base64,' + message.base64_image" alt="Screenshot"
                                             class="message-image" @click="expandImage">
@@ -335,7 +364,7 @@
         <div class="upload-modal" v-if="showUploadModal" @click.self="closeUploadModal">
             <div class="upload-modal-content">
                 <div class="upload-modal-header">
-                    <h3><i class="fas fa-upload"></i> Select upload method</h3>
+                    <h3><i class="fas fa-upload"></i> <span>${$t('select_upload_method')}</span></h3>
                     <button class="close-btn" @click="closeUploadModal">
                         <i class="fas fa-times"></i>
                     </button>
@@ -346,8 +375,8 @@
                             <i class="fas fa-folder"></i>
                         </div>
                         <div class="option-text">
-                            <h4>Upload to workspace</h4>
-                            <p>Files will be saved to the server and can be used in multiple sessions</p>
+                            <h4>${$t('upload_to_workspace')}</h4>
+                            <p>${$t('upload_workspace_desc')}</p>
                         </div>
                     </div>
                     <div class="upload-option-card" @click="triggerFileUpload('input')">
@@ -355,9 +384,8 @@
                             <i class="fas fa-file-import"></i>
                         </div>
                         <div class="option-text">
-                            <h4>Load to input</h4>
-                            <p>File content will be loaded directly to the input box, making it easier for direct
-                                analysis</p>
+                            <h4>${$t('load_to_input')}</h4>
+                            <p>${$t('load_input_desc')}</p>
                         </div>
                     </div>
                 </div>
@@ -367,7 +395,7 @@
         <!-- Configuration panel -->
         <div class="config-panel" :class="{ 'active': showConfigPanel }">
             <div class="config-panel-header">
-                <h2><i class="fas fa-wrench"></i> System Configuration</h2>
+                <h2><i class="fas fa-wrench"></i> ${$t('config_title')}</h2>
                 <button @click="toggleConfigPanel" class="close-btn">
                     <i class="fas fa-times"></i>
                 </button>
@@ -378,7 +406,7 @@
                     <button v-for="(section, key) in configSections" :key="key"
                         :class="['config-tab', {active: currentConfigTab === key}]" @click="currentConfigTab = key">
                         <i :class="['fas', section.icon]"></i>
-                        <span>${section.name}</span>
+                        <span>${$t(section.i18n_key)}</span>
                     </button>
                 </div>
 
@@ -534,10 +562,10 @@
 
                 <div class="config-actions">
                     <button @click="saveConfig" class="save-btn primary-btn">
-                        <i class="fas fa-save"></i> Save Configuration
+                        <i class="fas fa-save"></i> ${$t('config_save')}
                     </button>
                     <button @click="resetConfig" class="reset-btn secondary-btn">
-                        <i class="fas fa-undo"></i> Reset
+                        <i class="fas fa-undo"></i> ${$t('config_cancel')}
                     </button>
                 </div>
             </div>
@@ -584,13 +612,28 @@
         </div>
     </div>
 
-    <!-- Prism.js for code highlighting -->
+    <!-- Include Prism.js for code highlighting -->
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-go.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-php.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-ruby.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-swift.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-powershell.min.js"></script>
 
-    <!-- Main application script -->
+    <!-- App JS -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
     <!-- Page loading script -->

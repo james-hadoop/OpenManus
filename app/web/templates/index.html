@@ -15,6 +15,89 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
+    <style>
+        /* Language Selector Styles */
+        .language-selector {
+            position: relative;
+            margin-right: 10px;
+        }
+
+        .language-button {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 5px 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .language-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .language-button i {
+            margin-right: 5px;
+        }
+
+        .language-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            display: none;
+        }
+
+        .language-dropdown.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .language-option {
+            padding: 10px 15px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .language-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .language-flag {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -24,13 +107,38 @@
             <div class="navbar-left">
                 <div class="company-info">OpenManus</div>
                 <div class="navbar-divider"></div>
-                <a href="#" class="navbar-link">Introduction</a>
-                <a href="#" class="navbar-link">Examples</a>
+                <a href="#" class="navbar-link" data-i18n="nav_introduction">Introduction</a>
+                <a href="#" class="navbar-link" data-i18n="nav_examples">Examples</a>
             </div>
             <div class="navbar-right">
                 <a href="#" class="notification-button">
                     <i class="fas fa-bell"></i>
                 </a>
+                <!-- Language Selector -->
+                <div class="language-selector">
+                    <div class="language-button" id="language-btn">
+                        <i class="fas fa-globe"></i>
+                        <span data-i18n="switch_language">Language</span>
+                    </div>
+                    <div class="language-dropdown" id="language-dropdown">
+                        <div class="language-option" data-lang="en">
+                            <div class="language-flag">🇺🇸</div>
+                            <span>English</span>
+                        </div>
+                        <div class="language-option" data-lang="zh">
+                            <div class="language-flag">🇨🇳</div>
+                            <span>中文</span>
+                        </div>
+                        <div class="language-option" data-lang="ja">
+                            <div class="language-flag">🇯🇵</div>
+                            <span>日本語</span>
+                        </div>
+                        <div class="language-option" data-lang="ko">
+                            <div class="language-flag">🇰🇷</div>
+                            <span>한국어</span>
+                        </div>
+                    </div>
+                </div>
                 <a href="https://github.com/mannaandpoem/OpenManus" class="github-button" target="_blank"
                     rel="noopener noreferrer">
                     <i class="fab fa-github"></i>
@@ -128,7 +236,7 @@
             </div>
 
             <div class="title-container">
-                <h1 class="title">OPENMANUS</h1>
+                <h1 class="title" data-i18n="app_name">OPENMANUS</h1>
             </div>
 
             <!-- Add dynamic eyes between title and container -->
@@ -138,10 +246,12 @@
             </div>
 
             <div class="hero-content">
-                <p class="subtitle">Your Intelligent AI Assistant</p>
-                <p class="description"><span class="powered-text">Powered by</span> <span
-                        class="highlight-1">LLMs</span> and <span class="highlight-2">diverse tools</span>.<br>OpenManus
-                    completes tasks through <span class="highlight-3">AI reasoning</span>.</p>
+                <p class="subtitle" data-i18n="app_subtitle">Your Intelligent AI Assistant</p>
+                <p class="description"><span class="powered-text" data-i18n="powered_by">Powered by</span> <span
+                        class="highlight-1">LLMs</span> <span data-i18n="and">and</span> <span class="highlight-2"
+                        data-i18n="diverse_tools">diverse tools</span>.<br><span
+                        data-i18n="openmanus_completes">OpenManus completes tasks through</span> <span
+                        class="highlight-3" data-i18n="ai_reasoning">AI reasoning</span>.</p>
             </div>
 
             <!-- Video Section -->
@@ -170,7 +280,7 @@
                 </div>
             </div>
 
-            <a href="/chat" class="cta-button">START <span class="arrow-icon">→</span></a>
+            <a href="/chat" class="cta-button" data-i18n="start_button">START <span class="arrow-icon">→</span></a>
         </div>
     </div>
     <script>
@@ -185,6 +295,8 @@
             e.preventDefault();
         });
     </script>
+    <!-- Import internationalization script -->
+    <script src="/static/js/i18n-bridge.js"></script>
     <script src="/static/js/index.js"></script>
 </body>
 

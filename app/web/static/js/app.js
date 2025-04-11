@@ -14,6 +14,9 @@ const app = Vue.createApp({
             statusText: 'Not connected',
             connectionStatus: 'disconnected',
 
+            // i18n related
+            currentLanguage: 'en',
+
             // New: Gradient effect toggle
             gradientEffectEnabled: true,
 
@@ -134,11 +137,31 @@ const app = Vue.createApp({
                 }
             },
             configSections: {
-                llm: { name: 'Large Language Model', icon: 'fa-comment-dots' },
-                browser: { name: 'Browser', icon: 'fa-globe' },
-                search: { name: 'Search Engine', icon: 'fa-search' },
-                sandbox: { name: 'Sandbox', icon: 'fa-cube' },
-                server: { name: 'Server', icon: 'fa-server' }
+                llm: {
+                    name: 'LLM Configuration',
+                    i18n_key: 'config_llm',
+                    icon: 'fa-robot'
+                },
+                browser: {
+                    name: 'Browser Configuration',
+                    i18n_key: 'config_browser',
+                    icon: 'fa-globe'
+                },
+                search: {
+                    name: 'Search Configuration',
+                    i18n_key: 'config_search',
+                    icon: 'fa-search'
+                },
+                sandbox: {
+                    name: 'Sandbox Configuration',
+                    i18n_key: 'config_sandbox',
+                    icon: 'fa-box'
+                },
+                server: {
+                    name: 'Server Configuration',
+                    i18n_key: 'config_server',
+                    icon: 'fa-server'
+                }
             },
             originalConfig: null,
 
@@ -266,9 +289,57 @@ const app = Vue.createApp({
 
         // Initialize the drag functionality for the gradient toggle button
         this.initGradientToggleDrag();
+
+        // Get current language
+        try {
+            if (window.i18n && typeof window.i18n.getLanguage === 'function') {
+                this.currentLanguage = window.i18n.getLanguage();
+
+                // Listen for language changes
+                document.addEventListener('languageChanged', (event) => {
+                    try {
+                        this.currentLanguage = event.detail.language;
+                        this.updateStatusText();
+                        this.applyTranslations();
+                    } catch (error) {
+                        console.error('Error handling language change:', error);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing i18n:', error);
+        }
+
+        // 确保翻译被应用，即使i18n初始化失败
+        this.applyTranslations();
     },
 
     methods: {
+        // i18n translation helper
+        $t(key) {
+            // Use the i18n bridge if available
+            if (window.i18n && typeof window.i18n.translate === 'function') {
+                return window.i18n.translate(key);
+            }
+            return key; // Fallback to key if i18n is not available
+        },
+
+        // Update status text
+        updateStatusText() {
+            if (this.isConnected) {
+                if (this.isProcessing) {
+                    this.statusText = this.$t('status_processing');
+                    this.connectionStatus = 'processing';
+                } else {
+                    this.statusText = this.$t('status_connected');
+                    this.connectionStatus = 'connected';
+                }
+            } else {
+                this.statusText = this.$t('status_not_connected');
+                this.connectionStatus = 'disconnected';
+            }
+        },
+
         // Image preview functionality
         expandImage(event) {
             this.modalImage = event.target.src;
@@ -420,7 +491,28 @@ const app = Vue.createApp({
                 if (this.typingIndex < content.length) {
                     this.typingText += content[this.typingIndex];
                     this.typingIndex++;
-                    this.scrollToBottom();
+
+                    // 在每次更新字符时滚动对应的面板
+                    this.$nextTick(() => {
+                        // 如果是工具消息，只滚动工具面板
+                        if (message.role === 'tool' && this.$refs.toolMessagesContainer) {
+                            // 只有当用户没有手动滚动时才自动滚动
+                            if (!this.userScrolledToolMessages) {
+                                const container = this.$refs.toolMessagesContainer.querySelector('.column-content');
+                                if (container) {
+                                    container.scrollTop = container.scrollHeight;
+                                }
+                            }
+                        } else if (message.role === 'assistant' && this.$refs.agentMessagesContainer) {
+                            // 只有当用户没有手动滚动时才自动滚动
+                            if (!this.userScrolledAgentMessages) {
+                                const container = this.$refs.agentMessagesContainer.querySelector('.column-content');
+                                if (container) {
+                                    container.scrollTop = container.scrollHeight;
+                                }
+                            }
+                        }
+                    });
                 } else {
                     this.completeTypingEffect();
                 }
@@ -620,7 +712,7 @@ const app = Vue.createApp({
             // Adjust textarea height
             this.$nextTick(() => {
                 if (this.$refs.userInputArea) {
-                    this.$refs.userInputArea.style.height = 'auto';
+                    this.$refs.userInputArea.style.height = '42px';
                 }
             });
 
@@ -846,7 +938,8 @@ const app = Vue.createApp({
                         // If it's a tool message, only scroll the right tool messages container
                         if (messageObj.role === 'tool' && this.$refs.toolMessagesContainer) {
                             const container = this.$refs.toolMessagesContainer.querySelector('.column-content');
-                            if (container) {
+                            if (container && !this.userScrolledToolMessages) {
+                                // 总是滚动到底部，不考虑是否有打字效果
                                 container.scrollTop = container.scrollHeight;
                             }
                         } else {
@@ -1060,9 +1153,22 @@ const app = Vue.createApp({
                 return this.typingText;
             }
 
-            // Use marked.js to convert Markdown to HTML
-            const html = marked.parse(content);
-            return html;
+            try {
+                // Use marked.js to convert Markdown to HTML
+                // Ensure the marked object exists
+                if (typeof marked !== 'undefined') {
+                    return marked.parse(content);
+                } else {
+                    // If marked library is not available, perform basic formatting
+                    console.warn('Marked library not available, using basic formatting');
+                    // Simple line break conversion
+                    return content.replace(/\n/g, '<br>');
+                }
+            } catch (error) {
+                console.error('Error formatting message:', error);
+                // Fallback to plain text display when an error occurs
+                return content;
+            }
         },
 
         // Apply code highlighting
@@ -1107,20 +1213,22 @@ const app = Vue.createApp({
                 if (this.$refs.agentMessagesContainer) {
                     const container = this.$refs.agentMessagesContainer.querySelector('.column-content');
                     if (container) {
-                        // Only auto-scroll if there's no streaming in progress or user hasn't manually scrolled
-                        if (!this.typingInProgress || !this.userScrolledAgentMessages) {
+                        // Modify condition: allow scrolling even during typing effect, but respect user manual scrolling
+                        if (!this.userScrolledAgentMessages) {
                             // Use more reliable scrolling method
                             container.scrollTop = container.scrollHeight;
                         }
                     }
                 }
-
                 // Scroll the tool messages container
-                if (this.$refs.toolMessagesContainer && !this.typingInProgress && !this.userScrolledToolMessages) {
+                if (this.$refs.toolMessagesContainer) {
                     const container = this.$refs.toolMessagesContainer.querySelector('.column-content');
                     if (container) {
-                        // Use more reliable scrolling method
-                        container.scrollTop = container.scrollHeight;
+                        // Modify condition: allow scrolling even during typing effect, but respect user manual scrolling
+                        if (!this.userScrolledToolMessages) {
+                            // Use more reliable scrolling method
+                            container.scrollTop = container.scrollHeight;
+                        }
                     }
                 }
             });
@@ -1136,14 +1244,11 @@ const app = Vue.createApp({
             // Calculate if at the bottom (allow for some tolerance)
             const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
 
-            // If not at the bottom, mark as user has manually scrolled
-            // Only change the flag when we're actively streaming content
-            if (!atBottom && this.typingInProgress) {
+            // Set the user scroll flag regardless of whether typing effect is in progress
+            if (!atBottom) {
                 this.userScrolledToolMessages = true;
-            }
-
-            // When user scrolls back to the bottom, reset the flag
-            if (atBottom) {
+            } else {
+                // When user scrolls back to the bottom, reset the flag
                 this.userScrolledToolMessages = false;
             }
         },
@@ -1158,14 +1263,11 @@ const app = Vue.createApp({
             // Calculate if at the bottom (allow for some tolerance)
             const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
 
-            // If not at the bottom, mark as user has manually scrolled
-            // Only change the flag when we're actively streaming content
-            if (!atBottom && this.typingInProgress) {
+            // Set the user scroll flag regardless of whether typing effect is in progress
+            if (!atBottom) {
                 this.userScrolledAgentMessages = true;
-            }
-
-            // When user scrolls back to the bottom, reset the flag
-            if (atBottom) {
+            } else {
+                // When user scrolls back to the bottom, reset the flag
                 this.userScrolledAgentMessages = false;
             }
         },
@@ -1280,17 +1382,17 @@ const app = Vue.createApp({
 
                     if (reloadSuccess) {
                         if (serverConfigChanged) {
-                            messageContent = `Configuration has been successfully saved! However, the server address or port has been changed, and a restart is required to take effect.`;
+                            messageContent = this.$t('config_saved');
                             notificationType = 'warning';
                             notificationOptions.showAction = true;
                             notificationOptions.actionType = 'restart';
                             notificationOptions.duration = null; // Not automatically closed
                         } else {
-                            messageContent = `Configuration has been successfully updated, and a new session will be automatically created to apply the new configuration...`;
+                            messageContent = this.$t('config_saved');
                             notificationType = 'success';
                         }
                     } else {
-                        messageContent = `Configuration has been successfully saved, but the hot reload failed. Some changes may require a server restart to take effect.`;
+                        messageContent = this.$t('config_saved');
                         notificationType = 'warning';
                         notificationOptions.showAction = true;
                         notificationOptions.actionType = 'restart';
@@ -1319,7 +1421,7 @@ const app = Vue.createApp({
                 }
             } catch (error) {
                 console.error('Failed to save configuration:', error);
-                this.showError('Failed to save configuration: ' + (error.response?.data?.error || error.message));
+                this.showError(this.$t('config_save_failed') + ': ' + (error.response?.data?.error || error.message));
             }
         },
 
@@ -1354,9 +1456,16 @@ const app = Vue.createApp({
 
         // Restart server (placeholder method)
         restartServer() {
-            this.closeCenterNotification();
-            // This is a placeholder, the actual implementation may need to call the backend API
-            this.showCenterNotification('Server restart command has been sent, please wait for the service to recover...', 'info', { duration: 3000 });
+            // Send restart request
+            axios.post('/api/restart')
+                .then(() => {
+                    this.closeCenterNotification();
+                    this.showCenterNotification(this.$t('server_restart'), 'info');
+                })
+                .catch(error => {
+                    console.error('Failed to restart server:', error);
+                    this.showError(error.response?.data?.error || 'Failed to restart server');
+                });
         },
 
         // Show floating notification (reserved for backward compatibility)
@@ -1385,11 +1494,11 @@ const app = Vue.createApp({
                 const response = await axios.get('/api/files');
                 if (response.data && response.data.files) {
                     this.workspaceFiles = response.data.files;
-                    this.showNotification('File list has been updated', 'success');
+                    this.showNotification(this.$t('file_list_updated'), 'success');
                 }
             } catch (error) {
                 console.error('Failed to fetch workspace files:', error);
-                this.showError('Failed to fetch file list, please check network connection or server status');
+                this.showError(this.$t('failed_fetch_files'));
             }
         },
 
@@ -1405,26 +1514,24 @@ const app = Vue.createApp({
             downloadLink.click();
             document.body.removeChild(downloadLink);
 
-            this.showNotification(`Downloading: ${filePath}`, 'info');
+            this.showNotification(this.$t('downloading_file').replace('${filename}', filePath), 'info');
         },
 
         // Delete file
         async deleteFile(filePath) {
             try {
-                if (!confirm(`Are you sure you want to delete file "${filePath}"? This action cannot be undone.`)) {
+                if (!confirm(this.$t('file_delete_confirm').replace('${filename}', filePath))) {
                     return;
                 }
 
                 const response = await axios.delete(`/api/files/${filePath}`);
-
-                if (response.data && response.data.message) {
-                    this.showNotification(response.data.message, 'success');
-                    // Refresh file list
-                    this.refreshFiles();
+                if (response.data && response.data.success) {
+                    this.workspaceFiles = this.workspaceFiles.filter(file => file.path !== filePath);
+                    this.showNotification(this.$t('file_deleted').replace('${filename}', filePath), 'success');
                 }
             } catch (error) {
                 console.error('Failed to delete file:', error);
-                this.showError(error.response?.data?.error || 'Failed to delete file, please try again later');
+                this.showError(this.$t('file_delete_failed').replace('${filename}', filePath));
             }
         },
 
@@ -1506,7 +1613,7 @@ const app = Vue.createApp({
         loadFileToInput(file) {
             // Check file type
             if (!file.type.match('text.*') && !file.name.match(/\.(txt|md|json|csv|py|js|html|css|xml)$/i)) {
-                this.showNotification('Only text files can be loaded to input', 'warning');
+                this.showNotification(this.$t('text_file_only'), 'warning');
                 return;
             }
 
@@ -1518,10 +1625,10 @@ const app = Vue.createApp({
                 if (content.length > maxChars) {
                     this.userInput = content.substring(0, maxChars) +
                         `\n\n[Note: File ${file.name} is too large, only the first ${maxChars} characters are loaded]`;
-                    this.showNotification(`File ${file.name} is too large, only part of the content is loaded`, 'warning');
+                    this.showNotification(this.$t('file_too_large').replace('${filename}', file.name), 'warning');
                 } else {
                     this.userInput = content;
-                    this.showNotification(`File ${file.name} has been loaded to input`, 'success');
+                    this.showNotification(this.$t('file_loaded').replace('${filename}', file.name), 'success');
                 }
 
                 // Automatically focus input
@@ -1531,7 +1638,7 @@ const app = Vue.createApp({
             };
 
             reader.onerror = () => {
-                this.showError(`Failed to read file ${file.name}`);
+                this.showError(this.$t('file_read_failed').replace('${filename}', file.name));
             };
 
             reader.readAsText(file);
@@ -1544,7 +1651,7 @@ const app = Vue.createApp({
                 const formData = new FormData();
                 formData.append('file', file);
 
-                this.showNotification(`Uploading file: ${file.name}...`, 'info');
+                this.showNotification(this.$t('uploading_file').replace('${filename}', file.name), 'info');
 
                 // Send file to server
                 const response = await axios.post('/api/files', formData, {
@@ -1554,13 +1661,13 @@ const app = Vue.createApp({
                 });
 
                 if (response.data && response.data.file) {
-                    this.showNotification(`File ${file.name} has been uploaded successfully`, 'success');
+                    this.showNotification(this.$t('file_uploaded').replace('${filename}', file.name), 'success');
                     // Refresh file list
                     this.refreshFiles();
                 }
             } catch (error) {
                 console.error('Failed to upload file:', error);
-                this.showError(error.response?.data?.error || 'Failed to upload file, please try again later');
+                this.showError(error.response?.data?.error || this.$t('upload_failed'));
             }
         },
 
@@ -1570,20 +1677,8 @@ const app = Vue.createApp({
                 const textarea = this.$refs.userInputArea;
                 if (!textarea) return;
 
-                // Save current scroll position
-                const scrollTop = textarea.scrollTop;
-
-                // Reset height, so new height can be calculated correctly
-                textarea.style.height = 'auto';
-
-                // Set new height (scrollHeight is the actual height of the content), but not exceeding the maximum height
-                const newHeight = Math.min(80, Math.max(36, textarea.scrollHeight));
-                textarea.style.height = `${newHeight}px`;
-
-                // If content needs scrolling, restore scroll position
-                if (textarea.scrollHeight > newHeight) {
-                    textarea.scrollTop = scrollTop;
-                }
+                // Reset height to ensure a fixed initial height of 42px
+                textarea.style.height = '42px';
 
                 // Adjust message container scroll position, ensure latest message is visible
                 if (this.$refs.agentMessagesContainer) {
@@ -1605,7 +1700,7 @@ const app = Vue.createApp({
 
             // Show notification about toggled status
             this.showNotification(
-                this.gradientEffectEnabled ? 'Blue-red gradient effect has been enabled' : 'Blue-red gradient effect has been disabled',
+                this.gradientEffectEnabled ? this.$t('gradient_enabled') : this.$t('gradient_disabled'),
                 'info'
             );
         },
@@ -1702,6 +1797,13 @@ const app = Vue.createApp({
                 this.agentStatus.status = response.data.status;
             } catch (error) {
                 console.error('Failed to get agent status:', error);
+            }
+        },
+
+        // Apply translations to dynamic content
+        applyTranslations() {
+            if (window.i18n && typeof window.i18n.applyTranslations === 'function') {
+                window.i18n.applyTranslations();
             }
         },
     },
